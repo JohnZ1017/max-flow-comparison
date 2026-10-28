@@ -1,5 +1,6 @@
 #include "edmonds_karp.h"
 
+#include <queue>
 #include <vector>
 
 long long edmondsKarp(
@@ -17,6 +18,35 @@ long long edmondsKarp(
         residual[edge.from][edge.to] += edge.capacity;
     }
 
-    // BFS and augmentation logic will be added next.
+    std::vector<int> parent(n, -1);
+
+    auto bfs = [&]() -> bool {
+        std::fill(parent.begin(), parent.end(), -1);
+
+        std::queue<int> q;
+        q.push(source);
+        parent[source] = source;
+
+        while (!q.empty()) {
+            int u = q.front();
+            q.pop();
+
+            for (int v = 0; v < n; ++v) {
+                if (parent[v] == -1 && residual[u][v] > 0) {
+                    parent[v] = u;
+
+                    if (v == sink) {
+                        return true;
+                    }
+
+                    q.push(v);
+                }
+            }
+        }
+
+        return false;
+    };
+
+    // Augmentation logic will be added next.
     return 0;
 }
