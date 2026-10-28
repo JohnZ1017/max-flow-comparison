@@ -1,5 +1,7 @@
 #include "edmonds_karp.h"
 
+#include <algorithm>
+#include <limits>
 #include <queue>
 #include <vector>
 
@@ -47,6 +49,28 @@ long long edmondsKarp(
         return false;
     };
 
-    // Augmentation logic will be added next.
-    return 0;
+    long long maxFlow = 0;
+
+    while (bfs()) {
+        long long bottleneck = std::numeric_limits<long long>::max();
+
+        // Walk backwards from sink to source
+        // and find the smallest residual capacity.
+        for (int v = sink; v != source; v = parent[v]) {
+            int u = parent[v];
+            bottleneck = std::min(bottleneck, residual[u][v]);
+        }
+
+        // Update the residual graph.
+        for (int v = sink; v != source; v = parent[v]) {
+            int u = parent[v];
+
+            residual[u][v] -= bottleneck;
+            residual[v][u] += bottleneck;
+        }
+
+        maxFlow += bottleneck;
+    }
+
+    return maxFlow;
 }
