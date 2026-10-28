@@ -17,6 +17,7 @@ void testSimpleGraph() {
     long long result = edmondsKarp(4, edges, 0, 3);
 
     assert(result == 5);
+    std::cout << "testSimpleGraph passed\n";
 }
 
 void testSinglePath() {
@@ -29,6 +30,7 @@ void testSinglePath() {
     long long result = edmondsKarp(4, edges, 0, 3);
 
     assert(result == 3);
+    std::cout << "testSinglePath passed\n";
 }
 
 void testNoPath() {
@@ -40,6 +42,7 @@ void testNoPath() {
     long long result = edmondsKarp(4, edges, 0, 3);
 
     assert(result == 0);
+    std::cout << "testNoPath passed\n";
 }
 
 void testParallelEdges() {
@@ -52,6 +55,7 @@ void testParallelEdges() {
     long long result = edmondsKarp(3, edges, 0, 2);
 
     assert(result == 7);
+    std::cout << "testParallelEdges passed\n";
 }
 
 int main() {
