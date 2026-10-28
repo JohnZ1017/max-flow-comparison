@@ -1,0 +1,21 @@
+name: Run C++ Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compile tests
+        run: |
+          g++ -std=c++17 tests/tests.cpp src/edmonds_karp.cpp -o tests
+
+      - name: Run tests
+        run: |
+          ./tests
