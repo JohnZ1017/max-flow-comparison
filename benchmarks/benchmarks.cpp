@@ -54,6 +54,61 @@ long long timeDinic(
     ).count();
 }
 
+bool runBenchmark(
+    std::ofstream& output,
+    const std::string& family,
+    int vertices,
+    int edges,
+    unsigned int seed,
+    const std::vector<EdgeInput>& graph
+) {
+    int source = 0;
+    int sink = vertices - 1;
+
+    long long ekFlow = 0;
+    long long dinicFlow = 0;
+
+    long long ekTime = timeEdmondsKarp(
+        vertices,
+        graph,
+        source,
+        sink,
+        ekFlow
+    );
+
+    long long dinicTime = timeDinic(
+        vertices,
+        graph,
+        source,
+        sink,
+        dinicFlow
+    );
+
+    if (ekFlow != dinicFlow) {
+        std::cerr
+            << "ERROR: Flow mismatch for "
+            << family
+            << ", "
+            << vertices
+            << " vertices, seed "
+            << seed
+            << '\n';
+
+        return false;
+    }
+
+    output
+        << family << ','
+        << vertices << ','
+        << edges << ','
+        << seed << ','
+        << ekTime << ','
+        << dinicTime << ','
+        << ekFlow << '\n';
+
+    return true;
+}
+
 int main() {
     const std::vector<int> vertexCounts = {
         50,
@@ -63,9 +118,9 @@ int main() {
     };
 
     const std::vector<int> edgeMultipliers = {
-        3,   // sparse
-        8,   // medium
-        15   // dense
+        3,
+        8,
+        15
     };
 
     const int repetitions = 5;
@@ -74,36 +129,41 @@ int main() {
     std::ofstream output("results/runtime_results.csv");
 
     if (!output.is_open()) {
-        std::cerr << "Could not open results/runtime_results.csv\n";
+        std::cerr
+            << "Could not open results/runtime_results.csv\n";
         return 1;
     }
 
     output
+        << "family,"
         << "vertices,"
         << "edges,"
-        << "density,"
         << "seed,"
         << "edmonds_karp_us,"
         << "dinic_us,"
         << "max_flow\n";
 
+    // -------------------------------------------------
+    // Random sparse, medium and dense graphs
+    // -------------------------------------------------
+
     for (int vertices : vertexCounts) {
 
         for (int multiplier : edgeMultipliers) {
 
-            int edges = vertices * multiplier;
-
-            std::string density;
+            std::string family;
 
             if (multiplier == 3) {
-                density = "sparse";
+                family = "random_sparse";
             }
             else if (multiplier == 8) {
-                density = "medium";
+                family = "random_medium";
             }
             else {
-                density = "dense";
+                family = "random_dense";
             }
+
+            int edges = vertices * multiplier;
 
             for (int repetition = 0;
                  repetition < repetitions;
@@ -124,61 +184,146 @@ int main() {
                         seed
                     );
 
-                int source = 0;
-                int sink = vertices - 1;
-
-                long long ekFlow = 0;
-                long long dinicFlow = 0;
-
-                long long ekTime = timeEdmondsKarp(
-                    vertices,
-                    graph,
-                    source,
-                    sink,
-                    ekFlow
-                );
-
-                long long dinicTime = timeDinic(
-                    vertices,
-                    graph,
-                    source,
-                    sink,
-                    dinicFlow
-                );
-
-                if (ekFlow != dinicFlow) {
-                    std::cerr
-                        << "ERROR: Flow mismatch for "
-                        << vertices
-                        << " vertices, "
-                        << density
-                        << " graph, seed "
-                        << seed
-                        << '\n';
-
+                if (!runBenchmark(
+                        output,
+                        family,
+                        vertices,
+                        edges,
+                        seed,
+                        graph
+                    )) {
                     return 1;
                 }
 
-                output
-                    << vertices << ','
-                    << edges << ','
-                    << density << ','
-                    << seed << ','
-                    << ekTime << ','
-                    << dinicTime << ','
-                    << ekFlow << '\n';
-
                 std::cout
                     << "Completed: "
+                    << family
+                    << ", "
                     << vertices
-                    << " vertices, "
-                    << density
-                    << ", repetition "
+                    << " vertices, repetition "
                     << repetition + 1
                     << '/'
                     << repetitions
                     << '\n';
             }
+        }
+    }
+
+    // -------------------------------------------------
+    // Unit-capacity graphs
+    // -------------------------------------------------
+
+    for (int vertices : vertexCounts) {
+
+        int edges = vertices * 8;
+
+        for (int repetition = 0;
+             repetition < repetitions;
+             ++repetition) {
+
+            unsigned int seed =
+                static_cast<unsigned int>(
+                    vertices * 20000
+                    + repetition
+                );
+
+            std::vector<EdgeInput> graph =
+                generateUnitCapacityGraph(
+                    vertices,
+                    edges,
+                    seed
+                );
+
+            if (!runBenchmark(
+                    output,
+                    "unit_capacity",
+                    vertices,
+                    edges,
+                    seed,
+                    graph
+                )) {
+                return 1;
+            }
+
+            std::cout
+                << "Completed: unit_capacity, "
+                << vertices
+                << " vertices, repetition "
+                << repetition + 1
+                << '/'
+                << repetitions
+                << '\n';
+        }
+    }
+
+    // -------------------------------------------------
+    // Layered graphs
+    // -------------------------------------------------
+
+    const std::vector<int> layerCounts = {
+        4,
+        8,
+        10,
+        20
+    };
+
+    const std::vector<int> verticesPerLayer = {
+        12,
+        12,
+        20,
+        20
+    };
+
+    for (std::size_t i = 0;
+         i < layerCounts.size();
+         ++i) {
+
+        int layers = layerCounts[i];
+        int width = verticesPerLayer[i];
+
+        int vertices =
+            layers * width + 2;
+
+        for (int repetition = 0;
+             repetition < repetitions;
+             ++repetition) {
+
+            unsigned int seed =
+                static_cast<unsigned int>(
+                    vertices * 30000
+                    + repetition
+                );
+
+            std::vector<EdgeInput> graph =
+                generateLayeredGraph(
+                    layers,
+                    width,
+                    maxCapacity,
+                    seed
+                );
+
+            int edges =
+                static_cast<int>(graph.size());
+
+            if (!runBenchmark(
+                    output,
+                    "layered",
+                    vertices,
+                    edges,
+                    seed,
+                    graph
+                )) {
+                return 1;
+            }
+
+            std::cout
+                << "Completed: layered, "
+                << vertices
+                << " vertices, repetition "
+                << repetition + 1
+                << '/'
+                << repetitions
+                << '\n';
         }
     }
 
