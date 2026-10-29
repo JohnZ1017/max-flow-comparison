@@ -13,7 +13,8 @@ long long timeEdmondsKarp(
     const std::vector<EdgeInput>& graph,
     int source,
     int sink,
-    long long& flow
+    long long& flow,
+    EdmondsKarpStats& stats
 ) {
     auto start = std::chrono::steady_clock::now();
 
@@ -21,7 +22,8 @@ long long timeEdmondsKarp(
         vertices,
         graph,
         source,
-        sink
+        sink,
+        &stats
     );
 
     auto end = std::chrono::steady_clock::now();
@@ -36,7 +38,8 @@ long long timeDinic(
     const std::vector<EdgeInput>& graph,
     int source,
     int sink,
-    long long& flow
+    long long& flow,
+    DinicStats& stats
 ) {
     auto start = std::chrono::steady_clock::now();
 
@@ -44,7 +47,8 @@ long long timeDinic(
         vertices,
         graph,
         source,
-        sink
+        sink,
+        &stats
     );
 
     auto end = std::chrono::steady_clock::now();
@@ -68,12 +72,16 @@ bool runBenchmark(
     long long ekFlow = 0;
     long long dinicFlow = 0;
 
+    EdmondsKarpStats ekStats;
+    DinicStats dinicStats;
+
     long long ekTime = timeEdmondsKarp(
         vertices,
         graph,
         source,
         sink,
-        ekFlow
+        ekFlow,
+        ekStats
     );
 
     long long dinicTime = timeDinic(
@@ -81,7 +89,8 @@ bool runBenchmark(
         graph,
         source,
         sink,
-        dinicFlow
+        dinicFlow,
+        dinicStats
     );
 
     if (ekFlow != dinicFlow) {
@@ -104,7 +113,13 @@ bool runBenchmark(
         << seed << ','
         << ekTime << ','
         << dinicTime << ','
-        << ekFlow << '\n';
+        << ekFlow << ','
+        << ekStats.bfsSearches << ','
+        << ekStats.augmentations << ','
+        << dinicStats.bfsPhases << ','
+        << dinicStats.blockingFlowPhases << ','
+        << dinicStats.successfulPushes
+        << '\n';
 
     return true;
 }
@@ -141,7 +156,12 @@ int main() {
         << "seed,"
         << "edmonds_karp_us,"
         << "dinic_us,"
-        << "max_flow\n";
+        << "max_flow,"
+        << "ek_bfs_searches,"
+        << "ek_augmentations,"
+        << "dinic_bfs_phases,"
+        << "dinic_blocking_phases,"
+        << "dinic_successful_pushes\n";
 
     // -------------------------------------------------
     // Random sparse, medium and dense graphs
