@@ -18,6 +18,18 @@ std::vector<EdgeInput> generateRandomGraph(
     std::vector<EdgeInput> graph;
     std::set<std::pair<int, int>> usedEdges;
 
+    // Guarantee at least one source-to-sink path:
+    // 0 -> 1 -> 2 -> ... -> vertices - 1
+    for (int i = 0; i < vertices - 1; ++i) {
+        graph.push_back({
+            i,
+            i + 1,
+            capacityDist(rng)
+        });
+
+        usedEdges.insert({i, i + 1});
+    }
+
     while (static_cast<int>(graph.size()) < edges) {
         int from = vertexDist(rng);
         int to = vertexDist(rng);
