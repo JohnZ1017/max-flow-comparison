@@ -75,11 +75,53 @@ void testParallelEdges() {
     std::cout << "testParallelEdges passed\n";
 }
 
+void testDisconnectedSink() {
+    std::vector<EdgeInput> edges = {
+        {0, 1, 10},
+        {1, 2, 5},
+        {3, 4, 7}
+    };
+
+    long long ek = edmondsKarp(5, edges, 0, 4);
+    long long dn = dinic(5, edges, 0, 4);
+
+    assert(ek == 0);
+    assert(dn == 0);
+    assert(ek == dn);
+
+    std::cout << "testDisconnectedSink passed\n";
+}
+
+void testMultipleRoutes() {
+    std::vector<EdgeInput> edges = {
+        {0, 1, 10},
+        {0, 2, 10},
+        {1, 3, 4},
+        {1, 4, 8},
+        {1, 2, 2},
+        {2, 4, 9},
+        {4, 3, 6},
+        {3, 5, 10},
+        {4, 5, 10}
+    };
+
+    long long ek = edmondsKarp(6, edges, 0, 5);
+    long long dn = dinic(6, edges, 0, 5);
+
+    assert(ek == 19);
+    assert(dn == 19);
+    assert(ek == dn);
+
+    std::cout << "testMultipleRoutes passed\n";
+}
+
 int main() {
     testSimpleGraph();
     testSinglePath();
     testNoPath();
     testParallelEdges();
+    testDisconnectedSink();
+    testMultipleRoutes();
 
     std::cout << "All max-flow tests passed.\n";
 
