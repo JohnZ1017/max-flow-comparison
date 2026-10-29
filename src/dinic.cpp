@@ -15,7 +15,8 @@ long long dinic(
     int n,
     const std::vector<EdgeInput>& edges,
     int source,
-    int sink
+    int sink,
+    DinicStats* stats
 ) {
     std::vector<std::vector<DinicEdge>> graph(n);
 
@@ -43,6 +44,10 @@ long long dinic(
     std::vector<int> level(n);
 
     auto buildLevelGraph = [&]() -> bool {
+        if (stats != nullptr) {
+            stats->bfsPhases++;
+        }
+
         std::fill(level.begin(), level.end(), -1);
 
         std::queue<int> q;
@@ -54,7 +59,9 @@ long long dinic(
             q.pop();
 
             for (const DinicEdge& edge : graph[u]) {
-                if (edge.capacity > 0 && level[edge.to] == -1) {
+                if (edge.capacity > 0 &&
+                    level[edge.to] == -1) {
+
                     level[edge.to] = level[u] + 1;
                     q.push(edge.to);
                 }
@@ -66,7 +73,10 @@ long long dinic(
 
     std::vector<int> nextEdge(n);
 
-    auto sendFlow = [&](auto&& self, int u, long long flow) -> long long {
+    auto sendFlow = [&](auto&& self,
+                        int u,
+                        long long flow) -> long long {
+
         if (u == sink) {
             return flow;
         }
@@ -95,6 +105,10 @@ long long dinic(
                 edge.capacity -= pushed;
                 graph[edge.to][edge.reverseIndex].capacity += pushed;
 
+                if (stats != nullptr) {
+                    stats->successfulPushes++;
+                }
+
                 return pushed;
             }
         }
@@ -105,7 +119,15 @@ long long dinic(
     long long maxFlow = 0;
 
     while (buildLevelGraph()) {
-        std::fill(nextEdge.begin(), nextEdge.end(), 0);
+        if (stats != nullptr) {
+            stats->blockingFlowPhases++;
+        }
+
+        std::fill(
+            nextEdge.begin(),
+            nextEdge.end(),
+            0
+        );
 
         while (true) {
             long long pushed = sendFlow(
