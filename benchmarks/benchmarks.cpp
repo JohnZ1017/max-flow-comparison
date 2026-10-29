@@ -1,6 +1,7 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <string>
 #include <vector>
 
 #include "../src/edmonds_karp.h"
@@ -61,6 +62,12 @@ int main() {
         400
     };
 
+    const std::vector<int> edgeMultipliers = {
+        3,   // sparse
+        8,   // medium
+        15   // dense
+    };
+
     const int repetitions = 5;
     const long long maxCapacity = 100;
 
@@ -74,80 +81,104 @@ int main() {
     output
         << "vertices,"
         << "edges,"
+        << "density,"
         << "seed,"
         << "edmonds_karp_us,"
         << "dinic_us,"
         << "max_flow\n";
 
     for (int vertices : vertexCounts) {
-        int edges = vertices * 3;
 
-        for (int repetition = 0;
-             repetition < repetitions;
-             ++repetition) {
+        for (int multiplier : edgeMultipliers) {
 
-            unsigned int seed =
-                static_cast<unsigned int>(
-                    vertices * 1000 + repetition
-                );
+            int edges = vertices * multiplier;
 
-            std::vector<EdgeInput> graph =
-                generateRandomGraph(
-                    vertices,
-                    edges,
-                    maxCapacity,
-                    seed
-                );
+            std::string density;
 
-            int source = 0;
-            int sink = vertices - 1;
-
-            long long ekFlow = 0;
-            long long dinicFlow = 0;
-
-            long long ekTime = timeEdmondsKarp(
-                vertices,
-                graph,
-                source,
-                sink,
-                ekFlow
-            );
-
-            long long dinicTime = timeDinic(
-                vertices,
-                graph,
-                source,
-                sink,
-                dinicFlow
-            );
-
-            if (ekFlow != dinicFlow) {
-                std::cerr
-                    << "ERROR: Flow mismatch for "
-                    << vertices
-                    << " vertices, seed "
-                    << seed
-                    << '\n';
-
-                return 1;
+            if (multiplier == 3) {
+                density = "sparse";
+            }
+            else if (multiplier == 8) {
+                density = "medium";
+            }
+            else {
+                density = "dense";
             }
 
-            output
-                << vertices << ','
-                << edges << ','
-                << seed << ','
-                << ekTime << ','
-                << dinicTime << ','
-                << ekFlow << '\n';
+            for (int repetition = 0;
+                 repetition < repetitions;
+                 ++repetition) {
 
-            std::cout
-                << "Completed: "
-                << vertices
-                << " vertices, repetition "
-                << repetition + 1
-                << '/'
-                << repetitions
-                << '\n';
+                unsigned int seed =
+                    static_cast<unsigned int>(
+                        vertices * 10000
+                        + multiplier * 100
+                        + repetition
+                    );
+
+                std::vector<EdgeInput> graph =
+                    generateRandomGraph(
+                        vertices,
+                        edges,
+                        maxCapacity,
+                        seed
+                    );
+
+                int source = 0;
+                int sink = vertices - 1;
+
+                long long ekFlow = 0;
+                long long dinicFlow = 0;
+
+                long long ekTime = timeEdmondsKarp(
+                    vertices,
+                    graph,
+                    source,
+                    sink,
+                    ekFlow
+                );
+
+                long long dinicTime = timeDinic(
+                    vertices,
+                    graph,
+                    source,
+                    sink,
+                    dinicFlow
+                );
+
+                if (ekFlow != dinicFlow) {
+                    std::cerr
+                        << "ERROR: Flow mismatch for "
+                        << vertices
+                        << " vertices, "
+                        << density
+                        << " graph, seed "
+                        << seed
+                        << '\n';
+
+                    return 1;
+                }
+
+                output
+                    << vertices << ','
+                    << edges << ','
+                    << density << ','
+                    << seed << ','
+                    << ekTime << ','
+                    << dinicTime << ','
+                    << ekFlow << '\n';
+
+                std::cout
+                    << "Completed: "
+                    << vertices
+                    << " vertices, "
+                    << density
+                    << ", repetition "
+                    << repetition + 1
+                    << '/'
+                    << repetitions
+                    << '\n';
+            }
         }
     }
 
