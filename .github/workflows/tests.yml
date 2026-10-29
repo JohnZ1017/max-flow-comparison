@@ -14,7 +14,7 @@ jobs:
 
       - name: Compile tests
         run: |
-          g++ -std=c++17 tests/tests.cpp src/edmonds_karp.cpp -o tests_runner
+          g++ -std=c++17 tests/tests.cpp src/edmonds_karp.cpp src/dinic.cpp -o tests_runner
 
       - name: Run tests
         run: |
