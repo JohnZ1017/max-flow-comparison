@@ -1,0 +1,32 @@
+name: Run Benchmarks
+
+on:
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compile benchmark
+        run: |
+          g++ -std=c++17 \
+            benchmarks/benchmarks.cpp \
+            benchmarks/graph_generator.cpp \
+            src/edmonds_karp.cpp \
+            src/dinic.cpp \
+            -o benchmark_runner
+
+      - name: Run benchmark
+        run: |
+          mkdir -p results
+          ./benchmark_runner
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: results/runtime_results.csv
