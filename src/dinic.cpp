@@ -1,6 +1,7 @@
 #include "dinic.h"
 
 #include <algorithm>
+#include <limits>
 #include <queue>
 #include <vector>
 
@@ -63,6 +64,63 @@ long long dinic(
         return level[sink] != -1;
     };
 
-    // Blocking flow logic will be added next.
-    return 0;
+    std::vector<int> nextEdge(n);
+
+    auto sendFlow = [&](auto&& self, int u, long long flow) -> long long {
+        if (u == sink) {
+            return flow;
+        }
+
+        for (int& i = nextEdge[u];
+             i < static_cast<int>(graph[u].size());
+             ++i) {
+
+            DinicEdge& edge = graph[u][i];
+
+            if (edge.capacity <= 0) {
+                continue;
+            }
+
+            if (level[edge.to] != level[u] + 1) {
+                continue;
+            }
+
+            long long pushed = self(
+                self,
+                edge.to,
+                std::min(flow, edge.capacity)
+            );
+
+            if (pushed > 0) {
+                edge.capacity -= pushed;
+                graph[edge.to][edge.reverseIndex].capacity += pushed;
+
+                return pushed;
+            }
+        }
+
+        return 0;
+    };
+
+    long long maxFlow = 0;
+
+    while (buildLevelGraph()) {
+        std::fill(nextEdge.begin(), nextEdge.end(), 0);
+
+        while (true) {
+            long long pushed = sendFlow(
+                sendFlow,
+                source,
+                std::numeric_limits<long long>::max()
+            );
+
+            if (pushed == 0) {
+                break;
+            }
+
+            maxFlow += pushed;
+        }
+    }
+
+    return maxFlow;
 }
