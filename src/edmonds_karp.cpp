@@ -9,7 +9,8 @@ long long edmondsKarp(
     int n,
     const std::vector<EdgeInput>& edges,
     int source,
-    int sink
+    int sink,
+    EdmondsKarpStats* stats
 ) {
     std::vector<std::vector<long long>> residual(
         n,
@@ -23,6 +24,10 @@ long long edmondsKarp(
     std::vector<int> parent(n, -1);
 
     auto bfs = [&]() -> bool {
+        if (stats != nullptr) {
+            stats->bfsSearches++;
+        }
+
         std::fill(parent.begin(), parent.end(), -1);
 
         std::queue<int> q;
@@ -52,16 +57,18 @@ long long edmondsKarp(
     long long maxFlow = 0;
 
     while (bfs()) {
-        long long bottleneck = std::numeric_limits<long long>::max();
+        long long bottleneck =
+            std::numeric_limits<long long>::max();
 
-        // Walk backwards from sink to source
-        // and find the smallest residual capacity.
         for (int v = sink; v != source; v = parent[v]) {
             int u = parent[v];
-            bottleneck = std::min(bottleneck, residual[u][v]);
+
+            bottleneck = std::min(
+                bottleneck,
+                residual[u][v]
+            );
         }
 
-        // Update the residual graph.
         for (int v = sink; v != source; v = parent[v]) {
             int u = parent[v];
 
@@ -70,6 +77,10 @@ long long edmondsKarp(
         }
 
         maxFlow += bottleneck;
+
+        if (stats != nullptr) {
+            stats->augmentations++;
+        }
     }
 
     return maxFlow;
